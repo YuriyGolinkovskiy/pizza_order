@@ -1,6 +1,113 @@
 <template>
   <div class="page-container">
-    <md-app>
+    <v-app id="inspire">
+    <v-navigation-drawer
+      v-model="drawerRight"
+      fixed 
+      right
+      app
+    >
+    <div class="title-order" v-if="!list"><h2>nothing added</h2></div>
+      <v-list dense>
+        <md-list v-for="i in list"
+          :key="i.id">
+          <md-list-item> 
+            <img class="small-img" :src="`${i.image}`" alt="none">
+            
+          </md-list-item>
+          <md-list-item>
+            <span class="md-list-item-text"><h2>weight:</h2><h4>{{i.selected}}(g)</h4></span>
+            <span class="md-list-item-text"><h2>price:</h2> <h4>{{i.price}}₽</h4></span>
+          </md-list-item>
+<v-btn
+            absolute
+            color="orange"
+            class="white--text"
+            fab
+            small
+            right
+            bottom
+            @click="del(i.id)"
+          >
+            <v-icon>remove</v-icon>
+          </v-btn>
+        </md-list>
+        
+        <v-btn v-if="list" block large top @click="pay" depressed color="blue-grey" class="white--text">click to pay: {{orderCost}}₽</v-btn>
+      </v-list>
+      
+    </v-navigation-drawer>
+    <v-toolbar
+      color="blue-grey"
+      dark
+      fixed
+      app
+    >
+      <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
+      <v-toolbar-title>Toolbar</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-toolbar-side-icon @click.stop="drawerRight = !drawerRight">
+        <v-icon>shopping_cart</v-icon>
+      </v-toolbar-side-icon>
+    </v-toolbar>
+    <v-navigation-drawer
+      v-model="drawer"
+      fixed
+      app
+    >
+      <v-list dense>
+        <v-list-tile @click.stop="left = !left">
+          <v-list-tile-action>
+            <v-icon>exit_to_app</v-icon>
+          </v-list-tile-action>
+          <v-list-tile-content>
+            <v-list-tile-title><h1>MainPage</h1></v-list-tile-title>
+          </v-list-tile-content>
+        </v-list-tile>
+      </v-list>
+    </v-navigation-drawer>
+    <v-content>
+      <v-container fluid fill-height>
+        <v-layout justify-center align-center>
+          <v-flex shrink>
+            <md-card md-with-hover
+              v-for="ingredient in ingredients"
+              :key="ingredient.name">
+              <md-ripple>   
+              <md-card-header>
+                <md-card-header-text>
+                  <div class="md-title">{{ingredient.name}} {{ingredient.cost}}₽ (100g)</div>
+                  <div class="md-subhead">current price:{{ingredient.cost*ingredient.selected*0.01}}₽</div>
+                </md-card-header-text>
+              
+              </md-card-header>
+                <md-card-media>
+                  <img :src="`${ingredient.image}`" alt="none" class="img">
+                </md-card-media>
+              <md-card-actions>
+                <div class="group">      
+                    <input type="text" required v-model="ingredient.selected">
+                    <label >product weight (g)</label>
+                </div>
+              </md-card-actions>
+              <div class="buttons">
+                  <md-button @click="remove(ingredient.id)" class="md-raised ">Remove</md-button>
+                  <md-button @click="add(ingredient.id)" class="md-raised ">Add</md-button>
+              </div>
+            </md-ripple>
+            </md-card>
+          </v-flex>
+        </v-layout>
+      </v-container>
+    </v-content>
+    <v-footer color="blue-grey" class="white--text" app>
+      <span>Vuetify</span>
+      <v-spacer>pizza designer</v-spacer>
+      <span>&copy; 2019</span>
+    </v-footer>
+    </v-app>
+  </div> 
+    <!-- <md-app>
       <md-app-toolbar class="md-primary" md-elevation="0">
         <md-button class="md-icon-button" @click="toggleMenu" v-if="!menuVisible">
           <md-icon>menu</md-icon>
@@ -64,13 +171,17 @@
   </div>
       </md-app-content>
     </md-app>
-  </div>
+ -->
 </template>
 
 <script>
   export default {
     name: 'PersistentMini',
     data: () => ({
+      drawer: true,
+      drawerRight: true,
+      right: null,
+      left: null,
       menuVisible: false,
       ingredients: [
           {id: 0, name: 'meat', cost: 300, image:'https://images.wallpaperscraft.ru/image/myaso_chesnok_pripravy_petrushka_listiki_tarelka_posuda_belyy_fon_78086_1920x1080.jpg', selected: null},
@@ -80,16 +191,19 @@
           {id: 4, name: 'fruits', cost: 350, image:'https://avatars.mds.yandex.net/get-pdb/788379/f795e96d-dbb5-4307-8fb9-47198a70c519/s1200?webp=false', selected: null},
       ],
       order:[],
-      list:[],
+      list:null,
       orderCost:0,
     }),
+    props: {
+    source: String
+  },
     methods: {
       toggleMenu () {
         this.menuVisible = !this.menuVisible
       },
       add :function (id) {
-        this.list = []
-        if(this.ingredients[id].selected != null){
+        if(parseInt(this.ingredients[id].selected)){
+          this.list = []
             if (id in this.order){
               this.order[id].selected += Number.parseInt(this.ingredients[id].selected);
               this.order[id].price += this.ingredients[id].selected * this.ingredients[id].cost *0.01;
@@ -97,18 +211,33 @@
             else{
               this.order[id] = ({id: this.ingredients[id].id, selected: Number.parseInt(this.ingredients[id].selected), price: this.ingredients[id].selected * this.ingredients[id].cost *0.01, image: this.ingredients[id].image});
             }
-        }
-        this.order.forEach(element => {
+            this.order.forEach(element => {
           if(element != undefined){
             this.list.push(element);
           }
         });
         this.orderCost += Number.parseFloat(this.ingredients[id].selected * this.ingredients[id].cost *0.01);
+        }
+        // eslint-disable-next-line no-console
+           console.log(this.order,this.list,id);
         this.ingredients[id].selected = null
       },
-      remove :function (id) {
+      del:function(id){
         this.list = []
-        if(this.ingredients[id].selected != null){
+        this.orderCost -= Number.parseFloat(this.order[id].price);
+        this.order[id] = null;
+       
+         this.order.forEach(element => {
+          if(element != undefined){
+            this.list.push(element);
+          }
+        });
+           // eslint-disable-next-line no-console
+           console.log(this.order,this.list,id);
+      },
+      remove :function (id) {
+        if(parseInt(this.ingredients[id].selected)){
+          this.list = []
             if (id in this.order){
                 this.order[id].selected -= Number.parseInt(this.ingredients[id].selected);
                 this.order[id].price -= this.ingredients[id].selected * this.ingredients[id].cost *0.01;
@@ -117,12 +246,13 @@
             else{
               alert('Этот товар еще не был добавлен');
             }
-        }
-        this.order.forEach(element => {
+            this.order.forEach(element => {
           if(element != undefined){
             this.list.push(element);
           }
         });
+        }
+        
         this.ingredients[id].selected = null
       },
       pay:function(){
@@ -156,7 +286,14 @@
     height: 200px !important;
     width: 90% !important  ;
 }
-
+.title-order{
+  display: flex;
+  height: 64px;
+}
+.title-order h2{
+  padding-top:15px;
+  margin: 0 auto;
+}
   .group {
     position: relative;
     margin-top: 10px;
@@ -170,6 +307,7 @@
   width: 40%;
   box-shadow: 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12), 0 8px 10px 0 rgba(0,0,0,0.20);
 }
+
 input {
   width: 300px;
   font-size: 16px;
@@ -211,7 +349,7 @@ box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 3px rgba(0,0,0,0.12), 0 
   width: 100%;
 }
 .md-list{
-  width: 90%;
+  width: 90%; 
   margin-left: 5%;
   box-shadow: 0 2px 4px 0 rgba(0,0,0,0.14), 0 3px 4px 0 rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.20);
   margin-top: 10px;
@@ -220,4 +358,7 @@ box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 3px rgba(0,0,0,0.12), 0 
   text-align: center;
 }
 
+
 </style>
+
+
