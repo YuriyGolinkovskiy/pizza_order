@@ -218,8 +218,6 @@
         });
         this.orderCost += Number.parseFloat(this.ingredients[id].selected * this.ingredients[id].cost *0.01);
         }
-        // eslint-disable-next-line no-console
-           console.log(this.order,this.list,id);
         this.ingredients[id].selected = null
       },
       del:function(id){
